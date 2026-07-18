@@ -17,10 +17,23 @@ interface DatabaseReport {
   id: string;
   report_number: number;
   user_id: string;
+
   category: string;
   platform: string;
   description: string | null;
+
+  // Evidence
+  evidence_link: string | null;
+
+  screenshot_path: string | null;
+  screenshot_name: string | null;
+
+  file_path: string | null;
+  file_name: string | null;
+  file_type: string | null;
+
   created_at: string;
+
   status: ReportStatus;
   ai_summary: string | null;
   risk_level: number | null;
@@ -36,6 +49,25 @@ function formatDate(date: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(date));
+}
+
+function getEvidenceUrl(path: string) {
+  const { data } = supabase.storage
+    .from("report-evidence")
+    .getPublicUrl(path);
+
+  return data.publicUrl;
+}
+
+function normaliseUrl(url: string) {
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://")
+  ) {
+    return url;
+  }
+
+  return `https://${url}`;
 }
 
 function StatusBadge({ status }: { status: ReportStatus }) {
@@ -80,20 +112,28 @@ export default function App() {
 
     const { data, error } = await supabase
       .from("reports")
-      .select(
-        `
-          id,
-          report_number,
-          category,
-          platform,
-          description,
-          created_at,
-          status,
-          ai_summary,
-          risk_level,
-          reward_claimed
-        `
-      )
+      .select(`
+        id,
+        report_number,
+        user_id,
+        category,
+        platform,
+        description,
+
+        evidence_link,
+        screenshot_path,
+        screenshot_name,
+
+        file_path,
+        file_name,
+        file_type,
+
+        created_at,
+        status,
+        ai_summary,  
+        risk_level,
+        reward_claimed
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -402,6 +442,72 @@ async function updateReportStatus(
                       <div className="ai-summary">
                         <strong>AI summary</strong>
                         <p>{report.ai_summary}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="ai-summary">
+                    <strong>Submitted Evidence</strong>
+
+                    {!report.evidence_link &&
+                    !report.screenshot_path &&
+                    !report.file_path ? (
+                      <p>No evidence submitted.</p>
+                    ) : (
+                      <div style={{ marginTop: 10 }}>
+
+                        {/* Link */}
+                        {report.evidence_link && (
+                          <p>
+                            🔗{" "}
+                            <a
+                              href={normaliseUrl(report.evidence_link)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open Submitted Link
+                            </a>
+                          </p>
+                        )}
+
+                        {/* Screenshot */}
+                        {report.screenshot_path && (
+                          <div style={{ marginTop: 12 }}>
+                            <p><strong>Screenshot</strong></p>
+
+                            <a
+                              href={getEvidenceUrl(report.screenshot_path)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={getEvidenceUrl(report.screenshot_path)}
+                                alt="Screenshot"
+                                style={{
+                                  width: "100%",
+                                  maxWidth: 350,
+                                  borderRadius: 10,
+                                  border: "1px solid #ddd",
+                                  marginTop: 8,
+                                }}
+                              />
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Supporting File */}
+                        {report.file_path && (
+                          <p style={{ marginTop: 12 }}>
+                            📄{" "}
+                            <a
+                              href={getEvidenceUrl(report.file_path)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {report.file_name ?? "Open Supporting File"}
+                            </a>
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
