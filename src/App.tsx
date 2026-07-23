@@ -35,7 +35,6 @@ interface DatabaseReport {
   created_at: string;
 
   status: ReportStatus;
-  ai_summary: string | null;
   risk_level: number | null;
   reward_claimed: boolean;
 }
@@ -130,7 +129,6 @@ export default function App() {
 
         created_at,
         status,
-        ai_summary,  
         risk_level,
         reward_claimed
       `)
@@ -437,16 +435,7 @@ async function updateReportStatus(
                         </strong>
                       </div>
                     </div>
-
-                    {report.ai_summary && (
-                      <div className="ai-summary">
-                        <strong>AI summary</strong>
-                        <p>{report.ai_summary}</p>
-                      </div>
-                    )}
-                  </div>
                   
-                  <div className="ai-summary">
                     <strong>Submitted Evidence</strong>
 
                     {!report.evidence_link &&
